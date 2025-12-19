@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin – Bookings</title>
+<style>
+body{background:#0b0f1a;color:white;font-family:Inter}
+table{width:100%;border-collapse:collapse;margin-top:40px}
+th,td{padding:12px;border-bottom:1px solid #333}
+</style>
+</head>
+
+<body>
+<h1>📊 Booking Requests</h1>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Service</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
+
+<script>
+const token = localStorage.getItem("token");
+if(!token) location.href="login.html";
+
+fetch("https://YOUR-BACKEND-URL/api/bookings",{
+  headers:{ Authorization: token }
+})
+.then(res => res.json())
+.then(bookings => {
+  const tbody = document.getElementById("data");
+  bookings.forEach(b => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${b.name}</td>
+        <td>${b.email}</td>
+        <td>${b.phone}</td>
+        <td>${b.service}</td>
+        <td>${new Date(b.createdAt).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel – AIWeb Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:Inter,sans-serif;
+  background:#0b0f1a;
+  color:white;
+  display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:240px;
+  background:#12172a;
+  padding:20px;
+  height:100vh;
+}
+.sidebar h2{
+  color:#4f6bff;
+  margin-bottom:30px;
+}
+.sidebar a{
+  display:block;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:10px;
+  color:white;
+  text-decoration:none;
+  cursor:pointer;
+}
+.sidebar a:hover{background:#1a2145}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:30px;
+  overflow:auto;
+}
+
+.hidden{display:none}
+
+/* DASHBOARD */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-bottom:30px;
+}
+.card{
+  background:#12172a;
+  padding:20px;
+  border-radius:16px;
+  text-align:center;
+}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th,td{
+  padding:12px;
+  border-bottom:1px solid #333;
+  text-align:left;
+}
+tbody tr:hover{background:#1a2145}
+select{
+  background:#0f1530;
+  color:white;
+  border:none;
+  padding:6px;
+  border-radius:6px;
+}
+.whatsapp-btn{
+  color:#6bff95;
+  text-decoration:none;
+  font-weight:600;
+}
+.whatsapp-btn:hover{text-decoration:underline}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>AIWeb Admin</h2>
+  <a onclick="showSection('dashboard')">📊 Dashboard</a>
+  <a onclick="showSection('bookings')">📅 Bookings</a>
+  <a onclick="showSection('contacts')">📨 Contacts</a>
+  <a onclick="logout()">🚪 Logout</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <h1>Dashboard</h1>
+  <div class="cards">
+    <div class="card"><h2 id="total">0</h2>Total</div>
+    <div class="card"><h2 id="new">0</h2>New</div>
+    <div class="card"><h2 id="contacted">0</h2>Contacted</div>
+  </div>
+</div>
+
+<!-- BOOKINGS -->
+<div id="bookings" class="hidden">
+  <h1>Bookings</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Service</th>
+        <th>Status</th>
+        <th>WhatsApp</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="bookingData"></tbody>
+  </table>
+</div>
+
+<!-- CONTACTS -->
+<div id="contacts" class="hidden">
+  <h1>Contact Messages</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Message</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="contactData"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+// 🔴 CHANGE AFTER BACKEND DEPLOY
+const API_BASE = "https://YOUR-BACKEND-URL";
+
+/* ================= AUTH ================= */
+const token = localStorage.getItem("token");
+if (!token) {
+  location.href = "login.html";
+}
+
+/* ================= UI ================= */
+function showSection(id){
+  ["dashboard","bookings","contacts"].forEach(s=>{
+    document.getElementById(s).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function logout(){
+  localStorage.removeItem("token");
+  location.href="login.html";
+}
+
+/* ================= BOOKINGS ================= */
+async function loadBookings(){
+  const res = await fetch(API_BASE + "/api/bookings",{
+    headers:{ Authorization: token }
+  });
+
+  if(res.status === 403){
+    location.href = "index.html";
+    return;
+  }
+
+  const bookings = await res.json();
+
+  document.getElementById("total").innerText = bookings.length;
+  document.getElementById("new").innerText =
+    bookings.filter(b=>b.status==="new").length;
+  document.getElementById("contacted").innerText =
+    bookings.filter(b=>b.status==="contacted").length;
+
+  const tbody = document.getElementById("bookingData");
+  tbody.innerHTML = "";
+
+  bookings.forEach(b=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${b.name}</td>
+        <td>${b.service}</td>
+        <td>
+          <select onchange="updateStatus('${b._id}',this.value)">
+            <option ${b.status==="new"?"selected":""}>new</option>
+            <option ${b.status==="contacted"?"selected":""}>contacted</option>
+            <option ${b.status==="closed"?"selected":""}>closed</option>
+          </select>
+        </td>
+        <td>
+          ${b.whatsappURL
+            ? `<a class="whatsapp-btn" href="${b.whatsappURL}" target="_blank">📱 Alert</a>`
+            : `—`
+          }
+        </td>
+        <td>${new Date(b.createdAt).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+}
+
+async function updateStatus(id,status){
+  await fetch(`${API_BASE}/api/bookings/${id}/status`,{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:token
+    },
+    body:JSON.stringify({status})
+  });
+  loadBookings();
+}
+
+/* ================= CONTACTS ================= */
+async function loadContacts(){
+  const res = await fetch(API_BASE + "/api/contact",{
+    headers:{ Authorization: token }
+  });
+  const data = await res.json();
+
+  const tbody = document.getElementById("contactData");
+  tbody.innerHTML="";
+  data.forEach(c=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.email}</td>
+        <td>${c.message}</td>
+        <td>${new Date(c.createdAt).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+}
+
+/* ================= INIT ================= */
+loadBookings();
+loadContacts();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – AIWeb Studio</title>
+
+<style>
+body{
+background:#0b0f1a;
+color:white;
+font-family:Inter,sans-serif;
+margin:0;
+}
+
+header{
+padding:20px 8%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:#12172a;
+}
+
+button{
+background:#ff5c5c;
+border:none;
+padding:10px 16px;
+border-radius:10px;
+color:white;
+cursor:pointer;
+}
+
+section{
+padding:40px 8%;
+}
+
+h2{margin-bottom:20px}
+
+.card{
+background:#12172a;
+padding:20px;
+border-radius:16px;
+margin-bottom:15px;
+box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+.small{
+color:#cfd6ff;
+font-size:.85rem;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Admin Dashboard</h1>
+<button onclick="adminLogout()">Logout</button>
+</header>
+
+<section>
+<h2>Bookings</h2>
+<div id="bookings"></div>
+</section>
+
+<section>
+<h2>Contact Messages</h2>
+<div id="messages"></div>
+</section>
+
+<script src="js/admin.js"></script>
+</body>
+</html>
